@@ -1,0 +1,2061 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Simulador académico de valoración de acciones mediante DCF, Graham y Gordon.">
+<title>Simulador de Valoración de Acciones | CIPAS</title>
+
+<style>
+/* =========================================================
+   1. VARIABLES Y ESTILOS GENERALES
+   Referencia visual: DESIGN.md
+========================================================= */
+:root {
+    --teal: #088177;
+    --teal-dark: #06665e;
+    --ink: #1b1b1b;
+    --muted: #727773;
+    --canvas: #faf8f5;
+    --white: #ffffff;
+    --line: #e9e9e9;
+    --border: #d9d9d9;
+    --teal-light: #d8edeb;
+    --green: #16834a;
+    --green-bg: #e4f4e9;
+    --yellow: #a66b00;
+    --yellow-bg: #fff2cf;
+    --red: #c13c3c;
+    --red-bg: #fbe8e8;
+    --radius: 12px;
+    --font: Inter, "Segoe UI", Arial, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    background: var(--canvas);
+    color: var(--ink);
+    font-family: var(--font);
+    font-size: 15px;
+    line-height: 1.55;
+}
+
+button, input, select { font: inherit; }
+
+button { cursor: pointer; }
+
+a { color: var(--teal); }
+
+header {
+    background: var(--white);
+    border-bottom: 1px solid var(--line);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+}
+
+.header-inner {
+    max-width: 1250px;
+    margin: auto;
+    padding: 13px 25px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.brand-icon {
+    width: 43px;
+    height: 43px;
+    border-radius: 10px;
+    display: grid;
+    place-items: center;
+    background: var(--teal);
+    color: white;
+    font-size: 22px;
+}
+
+.brand strong { font-size: 17px; display: block; }
+.brand small { color: var(--muted); font-size: 11px; }
+
+.authors {
+    text-align: right;
+    font-size: 12px;
+    color: var(--muted);
+}
+
+.authors strong { color: var(--ink); }
+
+main {
+    max-width: 1250px;
+    margin: auto;
+    padding: 28px 24px 65px;
+}
+
+.hero {
+    background: var(--teal);
+    color: white;
+    border-radius: 18px;
+    padding: 48px;
+    margin-bottom: 30px;
+    position: relative;
+    overflow: hidden;
+}
+
+.hero:after {
+    content: "₿";
+    position: absolute;
+    right: 55px;
+    top: -65px;
+    font-size: 280px;
+    font-weight: 700;
+    opacity: .07;
+}
+
+.eyebrow {
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-size: 11px;
+    font-weight: 700;
+    opacity: .8;
+}
+
+.hero h1 {
+    font-size: clamp(34px, 5vw, 55px);
+    line-height: 1.1;
+    max-width: 700px;
+    margin: 15px 0;
+    font-weight: 600;
+}
+
+.hero p {
+    max-width: 670px;
+    font-size: 17px;
+    opacity: .93;
+}
+
+.hero button {
+    background: white;
+    color: var(--ink);
+    border: 0;
+    padding: 12px 23px;
+    border-radius: 8px;
+    font-weight: 700;
+    margin-top: 12px;
+}
+
+.hero button:hover { background: var(--teal-light); }
+
+.tabs {
+    display: flex;
+    gap: 5px;
+    overflow-x: auto;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 28px;
+    scrollbar-width: thin;
+}
+
+.tab {
+    white-space: nowrap;
+    background: transparent;
+    border: 0;
+    border-bottom: 3px solid transparent;
+    padding: 14px 15px;
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 600;
+    transition: .2s;
+}
+
+.tab:hover { color: var(--teal); }
+
+.tab.active {
+    color: var(--teal);
+    border-bottom-color: var(--teal);
+}
+
+.panel {
+    display: none;
+    animation: appear .3s ease;
+}
+
+.panel.active { display: block; }
+
+@keyframes appear {
+    from { opacity: 0; transform: translateY(7px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.section-title {
+    margin-bottom: 22px;
+}
+
+.section-title h2 {
+    font-size: 29px;
+    margin: 0 0 5px;
+}
+
+.section-title p { color: var(--muted); margin: 0; }
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+}
+
+.grid.three {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.card {
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 25px;
+    margin-bottom: 20px;
+}
+
+.card h3 { margin: 0 0 13px; font-size: 18px; }
+.card p { color: #505653; }
+.card .muted { color: var(--muted); }
+
+.card-icon {
+    font-size: 25px;
+    margin-bottom: 12px;
+}
+
+.access-card {
+    transition: transform .2s, border-color .2s;
+    cursor: pointer;
+}
+
+.access-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--teal);
+}
+
+.access-card button {
+    margin-top: 10px;
+    background: var(--teal);
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 7px;
+}
+
+.primary {
+    background: var(--teal);
+    color: white;
+    border: none;
+    padding: 11px 19px;
+    border-radius: 8px;
+    font-weight: 700;
+    transition: .2s;
+}
+
+.primary:hover { background: var(--teal-dark); transform: translateY(-1px); }
+
+.secondary {
+    background: white;
+    border: 1px solid var(--border);
+    color: var(--ink);
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-weight: 600;
+}
+
+.secondary:hover { border-color: var(--teal); color: var(--teal); }
+
+.danger-btn {
+    background: var(--red-bg);
+    color: var(--red);
+    border: 1px solid #f2caca;
+    padding: 10px 16px;
+    border-radius: 8px;
+}
+
+.button-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 9px;
+    margin-top: 20px;
+}
+
+label {
+    display: block;
+    font-size: 12px;
+    font-weight: 700;
+    margin-bottom: 6px;
+    color: #444b47;
+}
+
+input, select {
+    width: 100%;
+    padding: 10px 11px;
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    background: white;
+    color: var(--ink);
+    outline: none;
+    min-width: 0;
+}
+
+input:focus, select:focus {
+    border-color: var(--teal);
+    box-shadow: 0 0 0 3px rgba(8,129,119,.09);
+}
+
+.field { margin-bottom: 15px; }
+
+.field small {
+    display: block;
+    font-size: 10px;
+    color: var(--muted);
+    margin-top: 4px;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 16px;
+}
+
+.form-grid.three {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.formula {
+    background: var(--teal-light);
+    border-left: 4px solid var(--teal);
+    padding: 13px 17px;
+    margin: 14px 0;
+    border-radius: 4px;
+    font-weight: 700;
+    color: #075d56;
+    overflow-wrap: anywhere;
+}
+
+.result {
+    background: #f4f8f6;
+    border: 1px solid #dceae5;
+    border-radius: 10px;
+    padding: 20px;
+    margin-top: 18px;
+}
+
+.result-value {
+    font-size: clamp(25px, 4vw, 36px);
+    font-weight: 800;
+    color: var(--teal);
+    overflow-wrap: anywhere;
+}
+
+.result-label {
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .7px;
+}
+
+.status {
+    display: inline-block;
+    padding: 7px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 800;
+    margin-top: 10px;
+}
+
+.status.green { background: var(--green-bg); color: var(--green); }
+.status.yellow { background: var(--yellow-bg); color: var(--yellow); }
+.status.red { background: var(--red-bg); color: var(--red); }
+.status.gray { background: #eee; color: #555; }
+
+.procedure {
+    margin-top: 18px;
+    padding: 17px;
+    background: #fbfbfa;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    font-size: 13px;
+    overflow-wrap: anywhere;
+}
+
+.procedure ol { padding-left: 21px; }
+.procedure li { margin: 8px 0; }
+
+.notice {
+    padding: 14px 16px;
+    border-radius: 7px;
+    background: #fff4db;
+    color: #74520b;
+    border: 1px solid #f1dfb2;
+    font-size: 13px;
+    margin: 15px 0;
+}
+
+.info {
+    padding: 14px 16px;
+    background: #eef6f5;
+    border: 1px solid #d8eae7;
+    color: #285d57;
+    border-radius: 7px;
+    font-size: 13px;
+    margin: 15px 0;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    margin-top: 12px;
+}
+
+th, td {
+    padding: 11px 10px;
+    border-bottom: 1px solid var(--line);
+    text-align: left;
+}
+
+th { background: #f6f7f5; font-weight: 700; }
+td { font-variant-numeric: tabular-nums; }
+
+.table-wrap { overflow-x: auto; }
+
+canvas {
+    width: 100%;
+    height: 280px;
+    display: block;
+}
+
+.metric {
+    background: var(--white);
+    border: 1px solid var(--line);
+    padding: 20px;
+    border-radius: 9px;
+}
+
+.metric strong {
+    display: block;
+    font-size: 24px;
+    margin-top: 8px;
+}
+
+.metric span { font-size: 12px; color: var(--muted); }
+
+details {
+    border-bottom: 1px solid var(--line);
+    padding: 15px 0;
+}
+
+summary {
+    cursor: pointer;
+    font-weight: 700;
+}
+
+details p { color: #505653; font-size: 14px; }
+
+.concept {
+    margin-bottom: 16px;
+}
+
+.concept h3 { margin-bottom: 5px; }
+
+.concept .formula { margin: 9px 0; }
+
+.source-note {
+    color: var(--muted);
+    font-size: 11px;
+    margin-top: 15px;
+}
+
+footer {
+    background: #f0efeb;
+    padding: 35px 24px;
+    text-align: center;
+    border-top: 1px solid var(--line);
+}
+
+footer strong { display: block; margin-bottom: 8px; }
+footer p { color: var(--muted); font-size: 12px; margin: 5px; }
+
+hr { border: 0; border-top: 1px solid var(--line); margin: 20px 0; }
+
+.hidden { display: none !important; }
+
+.small-title {
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--teal);
+    margin-bottom: 12px;
+}
+
+@media(max-width:850px) {
+    .grid.three { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .hero { padding: 35px 25px; }
+    .authors { display: none; }
+}
+
+@media(max-width:600px) {
+    main { padding: 20px 13px 40px; }
+    .header-inner { padding: 10px 13px; }
+    .grid, .grid.three, .form-grid, .form-grid.three { grid-template-columns: 1fr; }
+    .hero h1 { font-size: 35px; }
+    .hero:after { right: -70px; }
+    .card { padding: 18px; }
+    .section-title h2 { font-size: 24px; }
+    .tab { padding: 12px 10px; font-size: 12px; }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <div class="header-inner">
+        <div class="brand">
+            <div class="brand-icon">↗</div>
+            <div>
+                <strong>EquityLab · CIPAS</strong>
+                <small>Simulador de valoración de acciones</small>
+            </div>
+        </div>
+        <div class="authors">
+            <strong>Desarrollado por:</strong><br>
+            Michelys Cardona · Daniela Martinez<br>
+            Monica Piñeres · Paula Roman
+        </div>
+    </div>
+</header>
+
+<main>
+
+<!-- NAVEGACIÓN -->
+<nav class="tabs" aria-label="Secciones del simulador">
+    <button class="tab active" data-tab="inicio">⌂ Inicio</button>
+    <button class="tab" data-tab="conceptos">▤ Conceptos y fórmulas</button>
+    <button class="tab" data-tab="dcf">◈ Flujo de caja libre</button>
+    <button class="tab" data-tab="graham">◆ Graham</button>
+    <button class="tab" data-tab="gordon">◉ Dividendos / Gordon</button>
+    <button class="tab" data-tab="comparador">▥ Comparador</button>
+    <button class="tab" data-tab="sustentacion">☷ Sustentación</button>
+</nav>
+
+<!-- =====================================================
+     PESTAÑA 1: INICIO
+===================================================== -->
+<section class="panel active" id="inicio">
+
+    <div class="hero">
+        <div class="eyebrow">Valoración de instrumentos financieros · CIPAS</div>
+        <h1>¿Cuánto vale realmente una acción?</h1>
+        <p>
+            Analiza empresas, calcula su valor intrínseco y compara tus
+            resultados con el precio al que cotizan en el mercado.
+            Tres metodologías financieras en una sola herramienta.
+        </p>
+        <button onclick="goTab('comparador')">Comenzar análisis →</button>
+    </div>
+
+    <div class="section-title">
+        <h2>Bienvenido a EquityLab</h2>
+        <p>Una herramienta académica para aprender a valorar empresas y tomar decisiones fundamentadas.</p>
+    </div>
+
+    <div class="grid">
+        <div class="card">
+            <div class="card-icon">📊</div>
+            <h3>¿Qué es el valor intrínseco?</h3>
+            <p>
+                Es una estimación del valor real de una acción teniendo en cuenta
+                la capacidad de la empresa para generar beneficios, efectivo y
+                dividendos en el futuro. No necesariamente coincide con el
+                precio al que se compra o vende en bolsa.
+            </p>
+        </div>
+
+        <div class="card">
+            <div class="card-icon">🎯</div>
+            <h3>Objetivo del simulador</h3>
+            <p>
+                Calcular el valor intrínseco de diferentes compañías utilizando
+                tres métodos de valoración, comparar sus resultados con el
+                mercado e identificar posibles oportunidades de inversión.
+            </p>
+        </div>
+    </div>
+
+    <div class="section-title">
+        <h2>Las tres metodologías</h2>
+        <p>Cada método observa la empresa desde una perspectiva diferente.</p>
+    </div>
+
+    <div class="grid three">
+        <div class="card">
+            <div class="card-icon">💰</div>
+            <h3>Flujo de caja descontado (DCF)</h3>
+            <p>Proyecta el efectivo que generará la empresa y lo trae al valor presente utilizando una tasa de descuento.</p>
+            <button class="primary" onclick="goTab('dcf')">Calcular DCF →</button>
+        </div>
+
+        <div class="card">
+            <div class="card-icon">📐</div>
+            <h3>Método de Graham</h3>
+            <p>Estima el valor de una acción mediante las ganancias por acción y una tasa de crecimiento esperada.</p>
+            <button class="primary" onclick="goTab('graham')">Calcular Graham →</button>
+        </div>
+
+        <div class="card">
+            <div class="card-icon">🏦</div>
+            <h3>Dividendos / Gordon</h3>
+            <p>Valora una acción considerando los dividendos futuros que se espera recibir de forma constante.</p>
+            <button class="primary" onclick="goTab('gordon')">Calcular Gordon →</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>¿Cómo utilizar el simulador?</h3>
+        <ol>
+            <li>Selecciona una empresa en cualquiera de los simuladores.</li>
+            <li>Revisa los datos de referencia y sus unidades.</li>
+            <li>Modifica los valores si cuentas con información financiera actualizada.</li>
+            <li>Presiona Calcular para obtener el valor intrínseco.</li>
+            <li>Consulta el procedimiento matemático y el semáforo de valoración.</li>
+            <li>Ingresa al comparador para analizar los tres métodos simultáneamente.</li>
+            <li>Utiliza la pestaña de sustentación para explicar tus resultados.</li>
+        </ol>
+    </div>
+
+    <div class="notice">
+        <strong>Advertencia académica:</strong> este simulador tiene fines educativos.
+        Sus resultados dependen de los supuestos introducidos y no constituyen
+        recomendaciones financieras personalizadas ni garantías de rentabilidad.
+    </div>
+
+</section>
+
+<!-- =====================================================
+     PESTAÑA 2: CONCEPTOS
+===================================================== -->
+<section class="panel" id="conceptos">
+
+    <div class="section-title">
+        <h2>Conceptos y fórmulas financieras</h2>
+        <p>Fundamentos necesarios para comprender los cálculos de valoración.</p>
+    </div>
+
+    <div class="card concept">
+        <h3>1. Valor presente (VP)</h3>
+        <p>Es el valor que tiene hoy una cantidad de dinero que se recibirá en el futuro, teniendo en cuenta una tasa de descuento.</p>
+        <div class="formula">VP = VF / (1 + i)ⁿ</div>
+        <p><strong>Ejemplo:</strong> recibir $1.000 dentro de dos años, con una tasa del 10%.</p>
+        <p>VP = 1.000 / (1,10)² = $826,45.</p>
+        <div class="grid">
+            <div class="field"><label>Valor futuro (VF)</label><input id="vp-vf" type="number" value="1000" min="0"></div>
+            <div class="field"><label>Tasa (%)</label><input id="vp-rate" type="number" value="10" min="0"></div>
+            <div class="field"><label>Periodos (n)</label><input id="vp-n" type="number" value="2" min="0"></div>
+        </div>
+        <button class="primary" onclick="calcVP()">Calcular VP</button>
+        <div id="vp-result" class="info">Resultado: $826,45</div>
+    </div>
+
+    <div class="card concept">
+        <h3>2. Valor futuro (VF)</h3>
+        <p>Representa cuánto valdrá en el futuro una inversión realizada hoy, si crece a una tasa determinada.</p>
+        <div class="formula">VF = VP × (1 + i)ⁿ</div>
+        <p><strong>Ejemplo:</strong> $1.000 invertidos al 10% durante dos años producen $1.210.</p>
+        <div class="grid">
+            <div class="field"><label>Valor presente</label><input id="vf-vp" type="number" value="1000" min="0"></div>
+            <div class="field"><label>Tasa (%)</label><input id="vf-rate" type="number" value="10" min="0"></div>
+            <div class="field"><label>Periodos</label><input id="vf-n" type="number" value="2" min="0"></div>
+        </div>
+        <button class="primary" onclick="calcVF()">Calcular VF</button>
+        <div id="vf-result" class="info">Resultado: $1.210,00</div>
+    </div>
+
+    <div class="card concept">
+        <h3>3. EBITDA</h3>
+        <p>Es una medida de desempeño operativo antes de intereses, impuestos, depreciaciones y amortizaciones.</p>
+        <div class="formula">EBITDA = EBIT + D&amp;A</div>
+        <p><strong>Ejemplo:</strong> EBIT de 500 y depreciaciones de 100: EBITDA = 600.</p>
+        <div class="grid">
+            <div class="field"><label>EBIT</label><input id="ebitda-ebit" type="number" value="500"></div>
+            <div class="field"><label>Depreciación y amortización</label><input id="ebitda-da" type="number" value="100" min="0"></div>
+        </div>
+        <button class="primary" onclick="calcEBITDA()">Calcular EBITDA</button>
+        <div id="ebitda-result" class="info">Resultado: 600</div>
+    </div>
+
+    <div class="card concept">
+        <h3>4. WACC (costo promedio ponderado de capital)</h3>
+        <p>Es el costo promedio de los recursos financieros de la empresa, considerando deuda y patrimonio.</p>
+        <div class="formula">
+            WACC = [E/(D+E) × Ke] + [D/(D+E) × Kd × (1−T)]
+        </div>
+        <p><strong>Ejemplo:</strong> patrimonio 60%, deuda 40%, Ke 12%, Kd 8% e impuestos 30%.</p>
+        <p>WACC = (0,60 × 12%) + (0,40 × 8% × 0,70) = 9,44%.</p>
+        <div class="form-grid">
+            <div class="field"><label>Patrimonio (E)</label><input id="w-e" type="number" value="60" min="0"></div>
+            <div class="field"><label>Deuda (D)</label><input id="w-d" type="number" value="40" min="0"></div>
+            <div class="field"><label>Costo patrimonio Ke (%)</label><input id="w-ke" type="number" value="12"></div>
+            <div class="field"><label>Costo deuda Kd (%)</label><input id="w-kd" type="number" value="8"></div>
+            <div class="field"><label>Impuestos T (%)</label><input id="w-tax" type="number" value="30"></div>
+        </div>
+        <button class="primary" onclick="calcWACC()">Calcular WACC</button>
+        <div id="wacc-result" class="info">Resultado: 9,44%</div>
+    </div>
+
+    <div class="card concept">
+        <h3>5. Costo del patrimonio (CAPM)</h3>
+        <p>Estima la rentabilidad que exigen los accionistas según el riesgo sistemático de la acción.</p>
+        <div class="formula">Ke = Rf + β × (Rm − Rf)</div>
+        <p>Rf es la tasa libre de riesgo, β mide la sensibilidad al mercado y Rm es el rendimiento esperado del mercado.</p>
+        <p><strong>Ejemplo:</strong> Rf = 4%, beta = 1,2 y Rm = 10%.</p>
+        <p>Ke = 4% + 1,2 × (10% − 4%) = 11,2%.</p>
+        <div class="form-grid three">
+            <div class="field"><label>Rf (%)</label><input id="capm-rf" type="number" value="4"></div>
+            <div class="field"><label>Beta</label><input id="capm-beta" type="number" value="1.2"></div>
+            <div class="field"><label>Rm (%)</label><input id="capm-rm" type="number" value="10"></div>
+        </div>
+        <button class="primary" onclick="calcCAPM()">Calcular Ke</button>
+        <div id="capm-result" class="info">Resultado: 11,20%</div>
+    </div>
+
+    <div class="card concept">
+        <h3>6. Flujo de caja libre (FCF)</h3>
+        <p>Es el efectivo que queda después de cubrir las operaciones, los impuestos y las inversiones necesarias para mantener o desarrollar el negocio.</p>
+        <div class="formula">FCF = EBIT(1−T) + D&amp;A − CAPEX − ΔCT</div>
+        <p><strong>Ejemplo:</strong> EBIT 500, impuestos 30%, D&amp;A 100, CAPEX 80 y variación del capital de trabajo 20.</p>
+        <p>FCF = 500(0,70) + 100 − 80 − 20 = 350.</p>
+    </div>
+
+    <div class="card concept">
+        <h3>7. Valor terminal</h3>
+        <p>Representa el valor de los flujos de caja que se esperan después del periodo de proyección explícita.</p>
+        <div class="formula">VT = FCFₙ × (1+g) / (WACC−g)</div>
+        <p>Se utiliza el modelo de crecimiento perpetuo. Es indispensable que WACC sea mayor que g.</p>
+        <p><strong>Ejemplo:</strong> FCF = 100, g = 3% y WACC = 10%. VT = 103 / 0,07 = 1.471,43.</p>
+    </div>
+
+    <div class="card concept">
+        <h3>8. EPS (ganancias por acción)</h3>
+        <p>Indica cuánto beneficio neto corresponde a cada acción ordinaria.</p>
+        <div class="formula">EPS = Utilidad neta / Acciones en circulación</div>
+        <p><strong>Ejemplo:</strong> utilidad neta de 10 millones y 2 millones de acciones: EPS = 5.</p>
+    </div>
+
+    <div class="card concept">
+        <h3>9. Tasa de crecimiento</h3>
+        <p>Expresa el aumento esperado de una variable financiera, como los ingresos, beneficios o dividendos.</p>
+        <div class="formula">g = (Valor final / Valor inicial) − 1</div>
+        <p>Para varios años, se utiliza la tasa de crecimiento anual compuesta (CAGR):</p>
+        <div class="formula">CAGR = (VF / VI)^(1/n) − 1</div>
+    </div>
+
+    <div class="card concept">
+        <h3>10. Margen de seguridad</h3>
+        <p>Es la diferencia entre el valor intrínseco estimado y el precio que se paga en el mercado, expresada como porcentaje del valor intrínseco.</p>
+        <div class="formula">Margen de seguridad = (VI − Precio) / VI × 100</div>
+        <p>Un margen positivo indica que el precio está por debajo de la estimación intrínseca.</p>
+        <p><strong>Ejemplo:</strong> valor intrínseco de $150 y precio de $100: margen = 33,33%.</p>
+    </div>
+
+</section>
+
+<!-- =====================================================
+     PESTAÑA 3: DCF
+===================================================== -->
+<section class="panel" id="dcf">
+
+    <div class="section-title">
+        <h2>Flujo de caja descontado (DCF)</h2>
+        <p>Valoración de la empresa a partir de los flujos de caja libre proyectados.</p>
+    </div>
+
+    <div class="card">
+        <div class="small-title">Selección de compañía</div>
+        <div class="form-grid">
+            <div class="field">
+                <label>Empresa</label>
+                <select id="dcf-company" onchange="selectCompany('dcf')"></select>
+            </div>
+            <div class="field">
+                <label>Moneda de valoración</label>
+                <input id="dcf-currency" readonly>
+            </div>
+        </div>
+        <div id="dcf-source" class="source-note"></div>
+        <div class="notice">Datos de referencia; verificar en Yahoo Finance, Investing.com y BVC antes de sustentar. Los importes operativos se expresan en millones de la moneda indicada; las acciones en millones.</div>
+    </div>
+
+    <div class="card">
+        <h3>Variables financieras</h3>
+        <div class="form-grid three">
+            <div class="field"><label>Precio de mercado</label><input id="d-price" type="number" step="any"></div>
+            <div class="field"><label>EBIT (millones)</label><input id="d-ebit" type="number" step="any"></div>
+            <div class="field"><label>Impuestos (%)</label><input id="d-tax" type="number" step="any"></div>
+            <div class="field"><label>D&amp;A (millones)</label><input id="d-da" type="number" step="any"></div>
+            <div class="field"><label>CAPEX (millones)</label><input id="d-capex" type="number" step="any"></div>
+            <div class="field"><label>Variación capital trabajo (millones)</label><input id="d-nwc" type="number" step="any"></div>
+            <div class="field"><label>Deuda total (millones)</label><input id="d-debt" type="number" step="any"></div>
+            <div class="field"><label>Efectivo (millones)</label><input id="d-cash" type="number" step="any"></div>
+            <div class="field"><label>Acciones (millones)</label><input id="d-shares" type="number" step="any"></div>
+            <div class="field"><label>WACC (%)</label><input id="d-wacc" type="number" step="any"></div>
+            <div class="field"><label>Crecimiento FCF (%)</label><input id="d-growth" type="number" step="any"></div>
+            <div class="field"><label>Crecimiento terminal (%)</label><input id="d-terminal" type="number" step="any"></div>
+        </div>
+        <div class="button-row">
+            <button class="primary" onclick="calculateDCF()">Calcular</button>
+            <button class="secondary" onclick="clearMethod('dcf')">Limpiar</button>
+            <button class="secondary" onclick="resetMethod('dcf')">Restablecer valores</button>
+        </div>
+        <div id="dcf-error" role="alert"></div>
+    </div>
+
+    <div id="dcf-output">
+        <div class="grid three">
+            <div class="metric"><span>Valor de empresa</span><strong id="d-ev">—</strong></div>
+            <div class="metric"><span>Valor del patrimonio</span><strong id="d-equity">—</strong></div>
+            <div class="metric"><span>Valor intrínseco / acción</span><strong id="d-per-share">—</strong></div>
+        </div>
+
+        <div class="card">
+            <h3>Proyección de flujos de caja a cinco años</h3>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th>Año</th><th>EBIT</th><th>FCF</th><th>Factor descuento</th><th>VP del FCF</th></tr></thead>
+                    <tbody id="dcf-table"></tbody>
+                </table>
+            </div>
+            <p class="source-note">Valores en millones de la moneda de la empresa.</p>
+        </div>
+
+        <div class="card">
+            <h3>Proyección del flujo de caja</h3>
+            <canvas id="dcf-chart" width="900" height="300"></canvas>
+        </div>
+
+        <div class="card">
+            <h3>Resultado de valoración</h3>
+            <div id="dcf-verdict"></div>
+            <div id="dcf-procedure" class="procedure"></div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>¿Cuándo conviene utilizar DCF?</h3>
+        <p><strong>Ventajas:</strong> permite evaluar la capacidad real de generar efectivo, incorpora el riesgo mediante el WACC y considera el crecimiento futuro.</p>
+        <p><strong>Desventajas:</strong> depende de proyecciones y supuestos; pequeñas variaciones en WACC o crecimiento terminal pueden cambiar significativamente el resultado.</p>
+        <p><strong>Uso recomendado:</strong> empresas con flujos de caja relativamente predecibles y operaciones que puedan proyectarse razonablemente.</p>
+    </div>
+</section>
+
+<!-- =====================================================
+     PESTAÑA 4: GRAHAM
+===================================================== -->
+<section class="panel" id="graham">
+
+    <div class="section-title">
+        <h2>Método de Benjamin Graham</h2>
+        <p>Estimación del valor de la acción a partir de sus ganancias por acción y crecimiento.</p>
+    </div>
+
+    <div class="card">
+        <div class="form-grid">
+            <div class="field">
+                <label>Empresa</label>
+                <select id="graham-company" onchange="selectCompany('graham')"></select>
+            </div>
+            <div class="field">
+                <label>Moneda</label>
+                <input id="g-currency" readonly>
+            </div>
+        </div>
+        <div id="graham-source" class="source-note"></div>
+        <div class="notice">Datos de referencia; verificar en Yahoo Finance, Investing.com y BVC antes de sustentar.</div>
+    </div>
+
+    <div class="card">
+        <h3>Datos de entrada</h3>
+        <div class="form-grid three">
+            <div class="field"><label>Precio de mercado</label><input id="g-price" type="number" step="any"></div>
+            <div class="field"><label>EPS (ganancias por acción)</label><input id="g-eps" type="number" step="any"></div>
+            <div class="field"><label>Crecimiento esperado g (%)</label><input id="g-growth" type="number" step="any"></div>
+            <div class="field"><label>Rendimiento bono AAA (%)</label><input id="g-bond" type="number" step="any"></div>
+            <div class="field"><label>Margen de seguridad (%)</label><input id="g-safety" type="number" step="any"></div>
+        </div>
+
+        <div class="formula">Graham clásico = EPS × (8,5 + 2g)</div>
+        <div class="formula">Graham ajustado = EPS × (8,5 + 2g) × (4,4 / Y)</div>
+        <p class="muted">En estas fórmulas, g se expresa como número porcentual (por ejemplo, 5 y no 0,05) y Y es el rendimiento porcentual del bono AAA.</p>
+
+        <div class="button-row">
+            <button class="primary" onclick="calculateGraham()">Calcular</button>
+            <button class="secondary" onclick="clearMethod('graham')">Limpiar</button>
+            <button class="secondary" onclick="resetMethod('graham')">Restablecer valores</button>
+        </div>
+        <div id="graham-error" role="alert"></div>
+    </div>
+
+    <div id="graham-output">
+        <div class="grid">
+            <div class="metric"><span>Valor Graham clásico</span><strong id="g-classic">—</strong></div>
+            <div class="metric"><span>Valor Graham ajustado</span><strong id="g-adjusted">—</strong></div>
+        </div>
+
+        <div class="card">
+            <h3>Comparación de resultados</h3>
+            <canvas id="graham-chart" width="900" height="280"></canvas>
+            <div id="graham-verdict"></div>
+            <div id="graham-procedure" class="procedure"></div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>¿Cuándo conviene utilizar Graham?</h3>
+        <p><strong>Ventajas:</strong> es sencillo, rápido y permite incorporar el crecimiento de las ganancias.</p>
+        <p><strong>Desventajas:</strong> no incorpora directamente los flujos de caja, puede ser poco adecuado para empresas con beneficios negativos o muy variables y su fórmula ajustada es sensible al rendimiento de los bonos.</p>
+        <p><strong>Uso recomendado:</strong> empresas rentables con EPS positivo e histórico de beneficios relativamente estable.</p>
+    </div>
+</section>
+
+<!-- =====================================================
+     PESTAÑA 5: GORDON
+===================================================== -->
+<section class="panel" id="gordon">
+
+    <div class="section-title">
+        <h2>Modelo de dividendos de Gordon</h2>
+        <p>Valoración de acciones mediante los dividendos futuros esperados.</p>
+    </div>
+
+    <div class="card">
+        <div class="form-grid">
+            <div class="field">
+                <label>Empresa</label>
+                <select id="gordon-company" onchange="selectCompany('gordon')"></select>
+            </div>
+            <div class="field">
+                <label>Moneda</label>
+                <input id="go-currency" readonly>
+            </div>
+        </div>
+        <div id="gordon-source" class="source-note"></div>
+        <div class="notice">Datos de referencia; verificar en Yahoo Finance, Investing.com y BVC antes de sustentar.</div>
+    </div>
+
+    <div class="card">
+        <h3>Datos de entrada</h3>
+        <div class="form-grid">
+            <div class="field"><label>Precio de mercado</label><input id="go-price" type="number" step="any"></div>
+            <div class="field"><label>Dividendo anual actual D0</label><input id="go-dividend" type="number" step="any"></div>
+            <div class="field"><label>Crecimiento de dividendos g (%)</label><input id="go-growth" type="number" step="any"></div>
+            <div class="field"><label>Costo del patrimonio k (%)</label><input id="go-k" type="number" step="any"></div>
+        </div>
+
+        <div class="formula">D1 = D0 × (1 + g)</div>
+        <div class="formula">P0 = D1 / (k − g)</div>
+
+        <div class="button-row">
+            <button class="primary" onclick="calculateGordon()">Calcular</button>
+            <button class="secondary" onclick="clearMethod('gordon')">Limpiar</button>
+            <button class="secondary" onclick="resetMethod('gordon')">Restablecer valores</button>
+        </div>
+        <div id="gordon-error" role="alert"></div>
+    </div>
+
+    <div id="gordon-output">
+        <div class="grid three">
+            <div class="metric"><span>Dividendo esperado D1</span><strong id="go-d1">—</strong></div>
+            <div class="metric"><span>Valor intrínseco</span><strong id="go-value">—</strong></div>
+            <div class="metric"><span>Rendimiento por dividendo</span><strong id="go-yield">—</strong></div>
+        </div>
+
+        <div class="card">
+            <h3>Resultado de valoración</h3>
+            <div id="gordon-verdict"></div>
+            <div id="gordon-procedure" class="procedure"></div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>¿Cuándo conviene utilizar Gordon?</h3>
+        <p><strong>Ventajas:</strong> permite estimar el valor de una acción a partir de los dividendos que recibirán los accionistas y es fácil de interpretar.</p>
+        <p><strong>Desventajas:</strong> no es adecuado para empresas que no pagan dividendos o que tienen políticas de distribución inestables. Es muy sensible a la diferencia entre k y g.</p>
+        <p><strong>Uso recomendado:</strong> empresas maduras que pagan dividendos regularmente y mantienen una tasa de crecimiento sostenible.</p>
+    </div>
+</section>
+
+<!-- =====================================================
+     PESTAÑA 6: COMPARADOR
+===================================================== -->
+<section class="panel" id="comparador">
+
+    <div class="section-title">
+        <h2>Comparador de métodos</h2>
+        <p>Compara los resultados calculados y analiza las diferencias de valoración.</p>
+    </div>
+
+    <div class="card">
+        <div class="field">
+            <label>Empresa seleccionada</label>
+            <select id="compare-company" onchange="selectCompareCompany()"></select>
+        </div>
+        <div class="info" id="compare-info"></div>
+        <button class="primary" onclick="refreshComparison()">Actualizar comparación</button>
+    </div>
+
+    <div class="card">
+        <h3>Comparación metodológica</h3>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr><th>Método</th><th>Qué mide</th><th>Cuándo usarlo</th><th>Ventajas</th><th>Desventajas</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>DCF</strong></td>
+                        <td>Valor presente de los flujos de caja futuros.</td>
+                        <td>Negocios con flujos previsibles.</td>
+                        <td>Considera operaciones, riesgo y crecimiento.</td>
+                        <td>Depende de proyecciones y WACC.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Graham</strong></td>
+                        <td>Valor según EPS y crecimiento esperado.</td>
+                        <td>Empresas rentables.</td>
+                        <td>Fácil de aplicar e interpretar.</td>
+                        <td>No contempla directamente el flujo de efectivo.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Gordon</strong></td>
+                        <td>Valor presente de dividendos perpetuos.</td>
+                        <td>Empresas con dividendos estables.</td>
+                        <td>Relaciona precio y distribución de beneficios.</td>
+                        <td>Requiere k mayor que g.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="grid three">
+        <div class="metric"><span>Precio de mercado</span><strong id="c-market">—</strong></div>
+        <div class="metric"><span>Promedio de métodos disponibles</span><strong id="c-average">—</strong></div>
+        <div class="metric"><span>Métodos disponibles</span><strong id="c-count">—</strong></div>
+    </div>
+
+    <div class="card">
+        <h3>Comparación de valores intrínsecos</h3>
+        <canvas id="compare-chart" width="900" height="320"></canvas>
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>Método</th><th>Valor estimado</th><th>Diferencia frente al mercado</th><th>Interpretación</th></tr></thead>
+                <tbody id="compare-table"></tbody>
+            </table>
+        </div>
+        <div id="compare-conclusion" class="result"></div>
+    </div>
+
+    <div class="notice">
+        El promedio simple de los métodos es únicamente una referencia descriptiva.
+        No representa necesariamente el valor justo de la acción, porque cada modelo
+        tiene supuestos, alcances y limitaciones diferentes.
+    </div>
+
+</section>
+
+<!-- =====================================================
+     PESTAÑA 7: SUSTENTACIÓN
+===================================================== -->
+<section class="panel" id="sustentacion">
+
+    <div class="hero">
+        <div class="eyebrow">Presentación académica · CIPAS</div>
+        <h1>Sustentación y conclusiones</h1>
+        <p>Fundamentos, interpretación de resultados y preparación para responder las preguntas del docente.</p>
+    </div>
+
+    <div class="card">
+        <h3>Integrantes del proyecto</h3>
+        <div class="grid">
+            <div>👩‍🎓 Michelys Cardona</div>
+            <div>👩‍🎓 Daniela Martinez</div>
+            <div>👩‍🎓 Monica Piñeres</div>
+            <div>👩‍🎓 Paula Roman</div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>1. Explicación del método DCF</h3>
+        <ol>
+            <li>Se recopilan los datos financieros de la compañía, especialmente EBIT, impuestos, depreciaciones, inversiones y capital de trabajo.</li>
+            <li>Se calcula el flujo de caja libre, que representa el efectivo generado después de atender las necesidades operativas y de inversión.</li>
+            <li>Se proyectan los flujos durante cinco años aplicando una tasa de crecimiento.</li>
+            <li>Se calcula el valor terminal para representar los flujos posteriores al quinto año.</li>
+            <li>Se descuentan los flujos y el valor terminal al presente mediante el WACC.</li>
+            <li>Se obtiene el valor de empresa y se resta la deuda neta para llegar al valor del patrimonio.</li>
+            <li>Finalmente, se divide el valor del patrimonio entre las acciones en circulación.</li>
+        </ol>
+    </div>
+
+    <div class="card">
+        <h3>2. Explicación del método Graham</h3>
+        <ol>
+            <li>Se identifica el beneficio por acción (EPS).</li>
+            <li>Se establece una tasa de crecimiento esperada.</li>
+            <li>Se aplica la fórmula clásica de Graham.</li>
+            <li>Se ajusta el resultado con el rendimiento del bono AAA utilizando el factor 4,4/Y.</li>
+            <li>Se incorpora el margen de seguridad como descuento sobre el valor estimado.</li>
+            <li>Se compara el valor obtenido con el precio de mercado.</li>
+        </ol>
+    </div>
+
+    <div class="card">
+        <h3>3. Explicación del modelo Gordon</h3>
+        <ol>
+            <li>Se identifica el dividendo anual actual por acción (D0).</li>
+            <li>Se estima una tasa de crecimiento constante de los dividendos.</li>
+            <li>Se calcula el dividendo esperado del siguiente periodo (D1).</li>
+            <li>Se determina el costo del patrimonio (k).</li>
+            <li>Se verifica que k sea superior a g.</li>
+            <li>Se divide D1 entre la diferencia entre k y g para obtener el valor intrínseco.</li>
+            <li>Se compara el resultado con el precio de mercado.</li>
+        </ol>
+    </div>
+
+    <div class="card">
+        <h3>Preguntas que podría realizar el profesor</h3>
+
+        <details>
+            <summary>1. ¿Qué diferencia existe entre precio de mercado y valor intrínseco?</summary>
+            <p>El precio de mercado es el valor al que se negocia una acción en bolsa. El valor intrínseco es una estimación basada en los fundamentos financieros de la empresa. Ambos pueden ser diferentes porque el mercado también responde a expectativas, emociones y condiciones económicas.</p>
+        </details>
+
+        <details>
+            <summary>2. ¿Por qué se descuentan los flujos de caja?</summary>
+            <p>Porque el dinero disponible hoy tiene mayor valor que la misma cantidad recibida en el futuro. El descuento incorpora el valor del tiempo y el riesgo de no recibir los flujos esperados.</p>
+        </details>
+
+        <details>
+            <summary>3. ¿Qué representa el WACC?</summary>
+            <p>Es el costo promedio ponderado del capital. Representa la rentabilidad mínima que debe generar la empresa para compensar a quienes aportan recursos mediante deuda y patrimonio.</p>
+        </details>
+
+        <details>
+            <summary>4. ¿Qué sucede cuando el WACC es menor o igual al crecimiento terminal?</summary>
+            <p>El modelo de crecimiento perpetuo deja de ser válido porque el denominador WACC menos g sería cero o negativo. Por eso se exige que WACC sea mayor que la tasa de crecimiento terminal.</p>
+        </details>
+
+        <details>
+            <summary>5. ¿Por qué Graham utiliza el EPS?</summary>
+            <p>Porque el EPS permite identificar cuánto beneficio corresponde a cada acción y sirve como punto de partida para estimar el valor de una empresa rentable.</p>
+        </details>
+
+        <details>
+            <summary>6. ¿Qué significa el margen de seguridad?</summary>
+            <p>Es un descuento entre el valor intrínseco estimado y el precio de mercado. Permite tener un margen de protección ante errores de cálculo, incertidumbre o cambios en las condiciones del negocio.</p>
+        </details>
+
+        <details>
+            <summary>7. ¿Por qué Gordon no es adecuado para todas las empresas?</summary>
+            <p>Porque requiere que la empresa pague dividendos y que estos puedan crecer a una tasa constante a largo plazo. No es adecuado para empresas sin dividendos o con distribuciones muy irregulares.</p>
+        </details>
+
+        <details>
+            <summary>8. ¿Qué significa una acción subvaluada?</summary>
+            <p>Significa que el precio de mercado es inferior al valor intrínseco estimado. Esto puede representar una oportunidad, aunque no garantiza que el precio vaya a subir.</p>
+        </details>
+
+        <details>
+            <summary>9. ¿Cuál de los tres métodos es más confiable?</summary>
+            <p>No existe uno universalmente superior. Depende del tipo de empresa, la estabilidad de sus flujos, la rentabilidad, el pago de dividendos y la calidad de los datos utilizados. Es conveniente analizar los resultados conjuntamente.</p>
+        </details>
+
+        <details>
+            <summary>10. ¿Qué ocurre si una empresa tiene EPS negativo?</summary>
+            <p>La fórmula de Graham no proporciona una valoración significativa con EPS negativo. Se debe estudiar la situación financiera de la empresa y considerar otros métodos.</p>
+        </details>
+
+        <details>
+            <summary>11. ¿Qué representa el valor terminal?</summary>
+            <p>Es la estimación del valor de los flujos de efectivo que la empresa generaría después del periodo de proyección explícita. En el DCF puede representar una parte importante del valor total.</p>
+        </details>
+
+        <details>
+            <summary>12. ¿Por qué los tres métodos pueden dar resultados diferentes?</summary>
+            <p>Porque utilizan variables y supuestos distintos. DCF analiza flujos de caja, Graham se basa en ganancias por acción y Gordon en dividendos futuros. Sus resultados no necesariamente deben coincidir.</p>
+        </details>
+
+        <details>
+            <summary>13. ¿Qué significa una acción correctamente valorada?</summary>
+            <p>Significa que el precio de mercado se encuentra relativamente cerca de la estimación del valor intrínseco, de acuerdo con el margen de tolerancia establecido en el simulador.</p>
+        </details>
+
+        <details>
+            <summary>14. ¿Por qué se resta la deuda neta en el DCF?</summary>
+            <p>Porque el valor de empresa corresponde al valor de las operaciones disponible para todos los proveedores de capital. Para obtener el valor del patrimonio se resta la deuda financiera y se suma el efectivo disponible.</p>
+        </details>
+    </div>
+
+    <div class="card">
+        <h3>Glosario financiero</h3>
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>Término</th><th>Significado</th></tr></thead>
+                <tbody>
+                    <tr><td>Acción</td><td>Participación en el capital de una empresa.</td></tr>
+                    <tr><td>CAPEX</td><td>Inversión en activos de largo plazo.</td></tr>
+                    <tr><td>CAPM</td><td>Modelo para estimar el costo del patrimonio.</td></tr>
+                    <tr><td>DCF</td><td>Valoración por flujos de caja descontados.</td></tr>
+                    <tr><td>D&amp;A</td><td>Depreciaciones y amortizaciones.</td></tr>
+                    <tr><td>EBIT</td><td>Beneficio antes de intereses e impuestos.</td></tr>
+                    <tr><td>EPS</td><td>Ganancias por acción.</td></tr>
+                    <tr><td>FCF</td><td>Flujo de caja libre.</td></tr>
+                    <tr><td>Gordon</td><td>Modelo de descuento de dividendos con crecimiento constante.</td></tr>
+                    <tr><td>Graham</td><td>Modelo de estimación de valor basado en ganancias y crecimiento.</td></tr>
+                    <tr><td>WACC</td><td>Costo promedio ponderado de capital.</td></tr>
+                    <tr><td>Valor terminal</td><td>Valor estimado de los flujos posteriores al periodo proyectado.</td></tr>
+                    <tr><td>Beta</td><td>Medida de sensibilidad de una acción frente al mercado.</td></tr>
+                    <tr><td>Deuda neta</td><td>Deuda financiera menos efectivo y equivalentes.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>Conclusiones generales</h3>
+        <ol>
+            <li>La valoración de acciones permite analizar una empresa más allá de su precio de cotización y estudiar los fundamentos que respaldan su valor.</li>
+            <li>El método DCF es útil para evaluar la capacidad de generación de efectivo de una compañía, siempre que las proyecciones y la tasa de descuento sean razonables.</li>
+            <li>El método Graham permite obtener una aproximación sencilla del valor de empresas con beneficios positivos y perspectivas de crecimiento.</li>
+            <li>El modelo Gordon es especialmente útil para compañías con dividendos constantes y políticas de distribución estables.</li>
+            <li>La comparación de metodologías proporciona una visión más completa, pues cada modelo presenta supuestos, ventajas y limitaciones.</li>
+            <li>Los resultados dependen de la calidad de los datos y de las hipótesis utilizadas. Por eso deben actualizarse y verificarse antes de tomar decisiones.</li>
+        </ol>
+    </div>
+
+    <div class="card">
+        <h3>Fuentes de información financiera</h3>
+        <ul>
+            <li><a href="https://finance.yahoo.com/" target="_blank" rel="noopener">Yahoo Finance</a> — cotizaciones, EPS, dividendos, estados financieros y datos históricos.</li>
+            <li><a href="https://www.investing.com/" target="_blank" rel="noopener">Investing.com</a> — indicadores financieros, cotizaciones e información corporativa.</li>
+            <li><a href="https://www.bvc.com.co/" target="_blank" rel="noopener">Bolsa de Valores de Colombia (BVC)</a> — información de emisores y mercado colombiano.</li>
+            <li><a href="https://www.sec.gov/edgar/search/" target="_blank" rel="noopener">SEC EDGAR</a> — informes financieros oficiales de emisores estadounidenses.</li>
+            <li><a href="https://www.superfinanciera.gov.co/" target="_blank" rel="noopener">Superintendencia Financiera de Colombia</a> — información del sistema financiero colombiano.</li>
+        </ul>
+    </div>
+
+    <div class="card">
+        <h3>Referencias bibliográficas (APA 7.ª edición)</h3>
+        <p>Graham, B., &amp; Dodd, D. L. (2009). <em>Security analysis</em> (6th ed.). McGraw-Hill.</p>
+        <p>Graham, B. (2006). <em>The intelligent investor</em> (Rev. ed.). HarperBusiness.</p>
+        <p>Damodaran, A. (2012). <em>Investment valuation: Tools and techniques for determining the value of any asset</em> (3rd ed.). John Wiley &amp; Sons.</p>
+        <p>Brealey, R. A., Myers, S. C., &amp; Allen, F. (2020). <em>Principles of corporate finance</em> (13th ed.). McGraw-Hill Education.</p>
+        <p>Gordon, M. J. (1959). Dividends, earnings, and stock prices. <em>The Review of Economics and Statistics, 41</em>(2), 99–105.</p>
+        <p>Yahoo Finance. (s. f.). <em>Financial markets data and company information.</em> https://finance.yahoo.com/</p>
+        <p>Investing.com. (s. f.). <em>Financial markets and financial data.</em> https://www.investing.com/</p>
+        <p>Bolsa de Valores de Colombia. (s. f.). <em>Información del mercado de valores colombiano.</em> https://www.bvc.com.co/</p>
+    </div>
+
+</section>
+</main>
+
+<footer>
+    <strong>EquityLab · Simulador de Valoración de Acciones</strong>
+    <p>Proyecto académico · Asignatura CIPAS</p>
+    <p>Michelys Cardona · Daniela Martinez · Monica Piñeres · Paula Roman</p>
+    <p>Herramienta educativa de análisis financiero. No constituye asesoramiento de inversión.</p>
+    <p>© 2026 · Todos los derechos reservados a sus autoras.</p>
+</footer>
+
+<script>
+/* =========================================================
+   2. BASE DE DATOS DE REFERENCIA
+   IMPORTANTE:
+   - Valores ilustrativos, no cotizaciones en vivo.
+   - Los importes de estados financieros están en millones.
+   - Acciones en millones.
+   - Cada valor debe verificarse antes de la sustentación.
+========================================================= */
+
+const companies = {
+    AAPL: {
+        name:"Apple", ticker:"AAPL", currency:"USD", symbol:"US$",
+        price:270, eps:7.5, dividend:1.04, shares:14900,
+        ebit:133000, tax:16, da:11500, capex:12500, nwc:1000,
+        debt:100000, cash:65000, beta:1.15,
+        growth:7, wacc:9, terminal:2.5, bond:5.0, k:9.5,
+        dividendGrowth:4, paysDividend:true,
+        source:"Yahoo Finance · Apple Inc. · Investing.com",
+        date:"05/11/2026 · valores ilustrativos sin consulta en vivo"
+    },
+    KO: {
+        name:"Coca-Cola", ticker:"KO", currency:"USD", symbol:"US$",
+        price:72, eps:3.0, dividend:2.04, shares:4300,
+        ebit:12500, tax:18, da:1500, capex:2500, nwc:300,
+        debt:45000, cash:10000, beta:0.60,
+        growth:5, wacc:7.5, terminal:2.5, bond:5.0, k:8,
+        dividendGrowth:3, paysDividend:true,
+        source:"Yahoo Finance · Coca-Cola Company · Investing.com",
+        date:"05/11/2026 · valores ilustrativos sin consulta en vivo"
+    },
+    MSFT: {
+        name:"Microsoft", ticker:"MSFT", currency:"USD", symbol:"US$",
+        price:510, eps:15.5, dividend:3.48, shares:7440,
+        ebit:125000, tax:18, da:20000, capex:45000, nwc:2500,
+        debt:95000, cash:95000, beta:1.0,
+        growth:10, wacc:9, terminal:3, bond:5.0, k:9.5,
+        dividendGrowth:9, paysDividend:true,
+        source:"Yahoo Finance · Microsoft Corporation · Investing.com",
+        date:"05/11/2026 · valores ilustrativos sin consulta en vivo"
+    },
+    EC: {
+        name:"Ecopetrol", ticker:"EC", currency:"COP", symbol:"$",
+        price:2100, eps:300, dividend:120, shares:41000,
+        ebit:23000, tax:35, da:12000, capex:22000, nwc:1500,
+        debt:105000, cash:20000, beta:1.1,
+        growth:3, wacc:12, terminal:2, bond:10, k:13,
+        dividendGrowth:2, paysDividend:true,
+        source:"BVC · Ecopetrol S.A. · Investing.com",
+        date:"05/11/2026 · valores ilustrativos sin consulta en vivo"
+    },
+    CIB: {
+        name:"Bancolombia", ticker:"CIB", currency:"COP", symbol:"$",
+        price:65000, eps:8500, dividend:3500, shares:960,
+        ebit:0, tax:35, da:0, capex:0, nwc:0,
+        debt:0, cash:0, beta:1.0,
+        growth:6, wacc:13, terminal:3, bond:10, k:14,
+        dividendGrowth:5, paysDividend:true,
+        source:"BVC · Grupo Cibest / Bancolombia · Investing.com",
+        date:"05/11/2026 · valores ilustrativos sin consulta en vivo",
+        bank:true
+    },
+    AVAL: {
+        name:"Grupo Aval", ticker:"AVAL", currency:"COP", symbol:"$",
+        price:650, eps:70, dividend:35, shares:25000,
+        ebit:0, tax:35, da:0, capex:0, nwc:0,
+        debt:0, cash:0, beta:0.9,
+        growth:5, wacc:13, terminal:3, bond:10, k:14,
+        dividendGrowth:3, paysDividend:true,
+        source:"BVC · Grupo Aval Acciones y Valores S.A. · Investing.com",
+        date:"05/11/2026 · valores ilustrativos sin consulta en vivo",
+        bank:true
+    }
+};
+
+const defaultCompany = "AAPL";
+let selected = defaultCompany;
+let results = { dcf:null, graham:null, gordon:null };
+
+/* =========================================================
+   3. UTILIDADES
+========================================================= */
+
+const $ = id => document.getElementById(id);
+
+const num = id => Number($(id).value);
+
+const fmt = (value, currency="USD") => {
+    if (!Number.isFinite(value)) return "No disponible";
+    const decimals = Math.abs(value) < 100 ? 2 : 2;
+    return new Intl.NumberFormat("es-CO", {
+        style:"currency",
+        currency:currency,
+        maximumFractionDigits:decimals,
+        minimumFractionDigits:decimals
+    }).format(value);
+};
+
+const fmtNumber = (value, decimals=2) =>
+    Number(value).toLocaleString("es-CO", {
+        minimumFractionDigits:decimals,
+        maximumFractionDigits:decimals
+    });
+
+const pct = value => fmtNumber(value,2) + "%";
+
+function escapeHTML(str) {
+    return String(str).replace(/[&<>"']/g, c => ({
+        "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;"
+    }[c]));
+}
+
+function setError(id, message) {
+    $(id).innerHTML = message
+        ? `<div class="notice">${escapeHTML(message)}</div>` : "";
+}
+
+function setText(id, value) { $(id).textContent = value; }
+
+function getCurrency() {
+    return companies[selected].currency;
+}
+
+function money(value) {
+    return fmt(value,getCurrency());
+}
+
+function positive(value) {
+    return Number.isFinite(value) && value >= 0;
+}
+
+function requiredFields(ids) {
+    for (const id of ids) {
+        const el = $(id);
+        if (!el || el.value.trim() === "" || !Number.isFinite(Number(el.value))) {
+            return "Debes completar todos los campos con valores numéricos válidos.";
+        }
+    }
+    return "";
+}
+
+function showVerdict(value, price, currency, tolerance=10) {
+    if (!Number.isFinite(value) || !Number.isFinite(price) || price <= 0) {
+        return '<span class="status gray">No disponible</span>';
+    }
+
+    const difference = ((value-price)/price)*100;
+    let cls, label;
+
+    if (difference > tolerance) {
+        cls="green"; label="SUBVALUADA · POSIBLE COMPRA";
+    } else if (difference < -tolerance) {
+        cls="red"; label="SOBREVALUADA · NO COMPRAR";
+    } else {
+        cls="yellow"; label="CORRECTAMENTE VALORADA · MANTENER";
+    }
+
+    return `
+        <div>
+            <span class="status ${cls}">${label}</span>
+            <p><strong>Diferencia frente al mercado:</strong> ${pct(difference)}</p>
+            <p class="muted">Precio: ${fmt(price,currency)} · Valor estimado: ${fmt(value,currency)}</p>
+            <p class="source-note">Clasificación académica con tolerancia del ±10%. No es una recomendación personalizada de inversión.</p>
+        </div>`;
+}
+
+/* =========================================================
+   4. NAVEGACIÓN
+========================================================= */
+
+function goTab(id) {
+    document.querySelectorAll(".tab").forEach(btn => {
+        btn.classList.toggle("active",btn.dataset.tab===id);
+    });
+    document.querySelectorAll(".panel").forEach(panel => {
+        panel.classList.toggle("active",panel.id===id);
+    });
+
+    if (id==="comparador") refreshComparison();
+    window.scrollTo({top:0,behavior:"smooth"});
+}
+
+document.querySelectorAll(".tab").forEach(btn => {
+    btn.addEventListener("click", () => goTab(btn.dataset.tab));
+});
+
+/* =========================================================
+   5. SELECTORES Y CARGA DE DATOS
+========================================================= */
+
+function initSelectors() {
+    const options = Object.values(companies).map(c =>
+        `<option value="${c.ticker}">${c.name} (${c.ticker})</option>`
+    ).join("");
+
+    ["dcf-company","graham-company","gordon-company","compare-company"].forEach(id => {
+        $(id).innerHTML=options;
+        $(id).value=selected;
+    });
+
+    resetMethod("dcf");
+    resetMethod("graham");
+    resetMethod("gordon");
+
+    calculateDCF();
+    calculateGraham();
+    calculateGordon();
+    refreshComparison();
+}
+
+function loadCompany(method, ticker) {
+    if (!companies[ticker]) return;
+    selected=ticker;
+    const c=companies[ticker];
+
+    const prefix = method==="dcf" ? "d" :
+                   method==="graham" ? "g" : "go";
+
+    const fields = {
+        dcf: {
+            "d-price":c.price, "d-ebit":c.ebit, "d-tax":c.tax,
+            "d-da":c.da, "d-capex":c.capex, "d-nwc":c.nwc,
+            "d-debt":c.debt, "d-cash":c.cash, "d-shares":c.shares,
+            "d-wacc":c.wacc, "d-growth":c.growth, "d-terminal":c.terminal
+        },
+        graham: {
+            "g-price":c.price, "g-eps":c.eps, "g-growth":c.growth,
+            "g-bond":c.bond, "g-safety":25
+        },
+        gordon: {
+            "go-price":c.price, "go-dividend":c.dividend,
+            "go-growth":c.dividendGrowth, "go-k":c.k
+        }
+    };
+
+    Object.entries(fields[method]).forEach(([id,value]) => $(id).value=value);
+
+    if (method==="dcf") {
+        $("dcf-currency").value=c.currency;
+        $("dcf-source").textContent=`Fuente de referencia: ${c.source}. Fecha de elaboración: ${c.date}.`;
+    }
+    if (method==="graham") {
+        $("g-currency").value=c.currency;
+        $("graham-source").textContent=`Fuente de referencia: ${c.source}. Fecha de elaboración: ${c.date}.`;
+    }
+    if (method==="gordon") {
+        $("go-currency").value=c.currency;
+        $("gordon-source").textContent=`Fuente de referencia: ${c.source}. Fecha de elaboración: ${c.date}.`;
+    }
+}
+
+function selectCompany(method) {
+    const id = method==="dcf" ? "dcf-company" :
+               method==="graham" ? "graham-company" : "gordon-company";
+    const ticker=$(id).value;
+    loadCompany(method,ticker);
+
+    if(method==="dcf") calculateDCF();
+    if(method==="graham") calculateGraham();
+    if(method==="gordon") calculateGordon();
+}
+
+function selectCompareCompany() {
+    selected=$("compare-company").value;
+    ["dcf","graham","gordon"].forEach(method => {
+        const id=method+"-company";
+        $(id).value=selected;
+        loadCompany(method,selected);
+    });
+    calculateDCF();
+    calculateGraham();
+    calculateGordon();
+    refreshComparison();
+}
+
+/* =========================================================
+   6. MINI CALCULADORAS
+========================================================= */
+
+function calcVP() {
+    const vf=num("vp-vf"), r=num("vp-rate")/100, n=num("vp-n");
+    if(requiredFields(["vp-vf","vp-rate","vp-n"]) || vf<0 || r<0 || n<0) {
+        $("vp-result").textContent="Verifica los valores. No se permiten negativos.";
+        return;
+    }
+    const result=vf/Math.pow(1+r,n);
+    $("vp-result").innerHTML=`<strong>VP = ${fmtNumber(result)}</strong><br>
+    Sustitución: ${fmtNumber(vf)} / (1 + ${fmtNumber(r*100)}%)^${n}.`;
+}
+
+function calcVF() {
+    const vp=num("vf-vp"), r=num("vf-rate")/100, n=num("vf-n");
+    if(requiredFields(["vf-vp","vf-rate","vf-n"]) || vp<0 || r<0 || n<0) {
+        $("vf-result").textContent="Verifica los valores. No se permiten negativos.";
+        return;
+    }
+    const result=vp*Math.pow(1+r,n);
+    $("vf-result").innerHTML=`<strong>VF = ${fmtNumber(result)}</strong><br>
+    Sustitución: ${fmtNumber(vp)} × (1 + ${fmtNumber(r*100)}%)^${n}.`;
+}
+
+function calcEBITDA() {
+    const e=num("ebitda-ebit"), da=num("ebitda-da");
+    if(requiredFields(["ebitda-ebit","ebitda-da"]) || da<0) {
+        $("ebitda-result").textContent="Introduce datos válidos.";
+        return;
+    }
+    $("ebitda-result").innerHTML=`EBITDA = ${fmtNumber(e)} + ${fmtNumber(da)} = <strong>${fmtNumber(e+da)}</strong>`;
+}
+
+function calcWACC() {
+    const E=num("w-e"), D=num("w-d"), ke=num("w-ke"), kd=num("w-kd"), t=num("w-tax");
+    if(requiredFields(["w-e","w-d","w-ke","w-kd","w-tax"]) ||
+       E<0 || D<0 || E+D===0 || t<0 || t>100 || ke<0 || kd<0) {
+        $("wacc-result").textContent="Verifica los datos y las ponderaciones.";
+        return;
+    }
+    const total=E+D;
+    const result=(E/total)*(ke/100)+(D/total)*(kd/100)*(1-t/100);
+    $("wacc-result").innerHTML=`WACC = <strong>${pct(result*100)}</strong><br>
+    Sustitución: (${fmtNumber(E/total)} × ${ke}%) + (${fmtNumber(D/total)} × ${kd}% × (1 − ${t}%)).`;
+}
+
+function calcCAPM() {
+    const rf=num("capm-rf"), beta=num("capm-beta"), rm=num("capm-rm");
+    if(requiredFields(["capm-rf","capm-beta","capm-rm"]) || beta<0) {
+        $("capm-result").textContent="Introduce valores válidos.";
+        return;
+    }
+    const ke=rf+beta*(rm-rf);
+    $("capm-result").innerHTML=`Ke = <strong>${pct(ke)}</strong><br>
+    Sustitución: ${rf}% + ${beta} × (${rm}% − ${rf}%).`;
+}
+
+/* =========================================================
+   7. GRÁFICOS SVG/CANVAS
+========================================================= */
+
+function drawBars(canvasId, labels, values, currency) {
+    const canvas=$(canvasId);
+    if(!canvas) return;
+    const ctx=canvas.getContext("2d");
+    const w=canvas.width, h=canvas.height;
+    ctx.clearRect(0,0,w,h);
+
+    const valid=values.map(v=>Number.isFinite(v)?v:0);
+    const max=Math.max(1,...valid.map(v=>Math.abs(v)));
+    const margin={left:65,right:25,top:35,bottom:65};
+    const chartH=h-margin.top-margin.bottom;
+    const baseY=h-margin.bottom;
+    const slot=(w-margin.left-margin.right)/labels.length;
+    const barW=Math.min(90,slot*.55);
+
+    ctx.strokeStyle="#e9e9e9";
+    ctx.lineWidth=1;
+    for(let i=0;i<=4;i++){
+        const y=margin.top+chartH*i/4;
+        ctx.beginPath();ctx.moveTo(margin.left,y);ctx.lineTo(w-margin.right,y);ctx.stroke();
+    }
+
+    ctx.font="12px Arial";
+    ctx.textAlign="center";
+
+    valid.forEach((v,i)=>{
+        const bh=Math.max(0,Math.abs(v)/max*chartH*.85);
+        const x=margin.left+slot*i+(slot-barW)/2;
+        const y=baseY-bh;
+        ctx.fillStyle=["#088177","#457eae","#b48c39","#9a6c99","#747b7a"][i%5];
+        ctx.fillRect(x,y,barW,bh);
+        ctx.fillStyle="#1b1b1b";
+        ctx.fillText(fmtNumber(v,1),x+barW/2,Math.max(17,y-8));
+        ctx.fillStyle="#4e5552";
+        ctx.fillText(labels[i],x+barW/2,h-28);
+    });
+}
+
+function drawLine(canvasId, labels, values) {
+    const canvas=$(canvasId);
+    if(!canvas) return;
+    const ctx=canvas.getContext("2d");
+    const w=canvas.width,h=canvas.height;
+    ctx.clearRect(0,0,w,h);
+    const max=Math.max(1,...values.map(v=>Math.abs(v)));
+    const min=0, left=65,right=25,top=30,bottom=45;
+    const usableW=w-left-right, usableH=h-top-bottom;
+    ctx.strokeStyle="#e9e9e9";
+    for(let i=0;i<5;i++){
+        const y=top+usableH*i/4;
+        ctx.beginPath();ctx.moveTo(left,y);ctx.lineTo(w-right,y);ctx.stroke();
+    }
+    const pts=values.map((v,i)=>({
+        x:left+(usableW*i/Math.max(1,values.length-1)),
+        y:top+usableH-(v-min)/(max-min||1)*usableH
+    }));
+    ctx.strokeStyle="#088177";
+    ctx.lineWidth=3;
+    ctx.beginPath();
+    pts.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));
+    ctx.stroke();
+    pts.forEach((p,i)=>{
+        ctx.fillStyle="#088177";
+        ctx.beginPath();ctx.arc(p.x,p.y,5,0,Math.PI*2);ctx.fill();
+        ctx.fillStyle="#1b1b1b";
+        ctx.font="12px Arial";
+        ctx.textAlign="center";
+        ctx.fillText(fmtNumber(values[i],0),p.x,p.y-12);
+        ctx.fillText(labels[i],p.x,h-17);
+    });
+}
+
+/* =========================================================
+   8. DCF
+========================================================= */
+
+const DCF_IDS=[
+    "d-price","d-ebit","d-tax","d-da","d-capex","d-nwc",
+    "d-debt","d-cash","d-shares","d-wacc","d-growth","d-terminal"
+];
+
+function calculateDCF() {
+    setError("dcf-error","");
+    const error=requiredFields(DCF_IDS);
+    if(error) {
+        setError("dcf-error",error);
+        return;
+    }
+
+    const [price,ebit,tax,da,capex,nwc,debt,cash,shares,wacc,growth,terminal]=DCF_IDS.map(num);
+
+    if(price<=0 || shares<=0 || ebit<=0 || tax<0 || tax>100 ||
+       da<0 || capex<0 || debt<0 || cash<0 || wacc<=0 ||
+       terminal<0 || wacc<=terminal || growth<=-100 || growth>100) {
+        setError("dcf-error","Revisa los datos: precio, EBIT y acciones deben ser positivos; impuestos entre 0 y 100; WACC debe ser mayor que el crecimiento terminal.");
+        return;
+    }
+
+    const c=companies[selected];
+    if(c.bank) {
+        setError("dcf-error","El DCF operativo convencional no es recomendable para bancos y entidades financieras, porque su deuda forma parte de la operación. Utiliza Graham o Gordon, o aplica un modelo específico de valoración bancaria.");
+        $("d-ev").textContent="No aplica";
+        $("d-equity").textContent="No aplica";
+        $("d-per-share").textContent="No aplica";
+        $("dcf-table").innerHTML="<tr><td colspan='5'>No se genera una valoración DCF convencional para esta entidad financiera.</td></tr>";
+        $("dcf-verdict").innerHTML='<span class="status gray">Método no aplicable</span>';
+        $("dcf-procedure").textContent="Para entidades financieras se recomienda un modelo de descuento de dividendos, flujo de caja al patrimonio o valoración por exceso de retornos.";
+        results.dcf=null;
+        refreshComparison();
+        return;
+    }
+
+    const r=wacc/100, g=growth/100, gt=terminal/100, t=tax/100;
+    const baseFCF=ebit*(1-t)+da-capex-nwc;
+    const rows=[];
+    let pvSum=0;
+
+    for(let year=1;year<=5;year++){
+        const projectedEBIT=ebit*Math.pow(1+g,year);
+        const fcf=baseFCF*Math.pow(1+g,year);
+        const factor=1/Math.pow(1+r,year);
+        const pv=fcf*factor;
+        pvSum+=pv;
+        rows.push({year,ebit:projectedEBIT,fcf,factor,pv});
+    }
+
+    const fcf5=rows[4].fcf;
+    const terminalValue=fcf5*(1+gt)/(r-gt);
+    const pvTerminal=terminalValue/Math.pow(1+r,5);
+    const ev=pvSum+pvTerminal;
+    const netDebt=debt-cash;
+    const equity=ev-netDebt;
+    const perShare=equity/shares;
+
+    $("d-ev").textContent=money(ev);
+    $("d-equity").textContent=money(equity);
+    $("d-per-share").textContent=money(perShare);
+
+    $("dcf-table").innerHTML=rows.map(x=>`
+        <tr>
+            <td>Año ${x.year}</td>
+            <td>${fmtNumber(x.ebit)}</td>
+            <td>${fmtNumber(x.fcf)}</td>
+            <td>${fmtNumber(x.factor,4)}</td>
+            <td>${fmtNumber(x.pv)}</td>
+        </tr>`).join("");
+
+    drawLine("dcf-chart",rows.map(x=>"Año "+x.year),rows.map(x=>x.fcf));
+
+    $("dcf-verdict").innerHTML=showVerdict(perShare,price,c.currency);
+
+    $("dcf-procedure").innerHTML=`
+        <h4>Procedimiento paso a paso</h4>
+        <ol>
+        <li>FCF base = EBIT × (1 − T) + D&amp;A − CAPEX − ΔCT.</li>
+        <li>Sustitución: ${fmtNumber(ebit)} × (1 − ${tax}%) + ${fmtNumber(da)} − ${fmtNumber(capex)} − (${fmtNumber(nwc)}) = <strong>${fmtNumber(baseFCF)}</strong>.</li>
+        <li>Se proyecta cada FCF multiplicando el flujo base por (1 + ${growth}%) elevado al número de años.</li>
+        <li>Se suman los flujos descontados: <strong>${fmtNumber(pvSum)}</strong>.</li>
+        <li>VT = ${fmtNumber(fcf5)} × (1 + ${gt}) / (${r} − ${gt}) = <strong>${fmtNumber(terminalValue)}</strong>.</li>
+        <li>VP del valor terminal = ${fmtNumber(terminalValue)} / (1 + ${r})⁵ = <strong>${fmtNumber(pvTerminal)}</strong>.</li>
+        <li>Valor empresa = ${fmtNumber(pvSum)} + ${fmtNumber(pvTerminal)} = <strong>${fmtNumber(ev)}</strong>.</li>
+        <li>Deuda neta = ${fmtNumber(debt)} − ${fmtNumber(cash)} = ${fmtNumber(netDebt)}.</li>
+        <li>Patrimonio = ${fmtNumber(ev)} − (${fmtNumber(netDebt)}) = <strong>${fmtNumber(equity)}</strong>.</li>
+        <li>Valor por acción = ${fmtNumber(equity)} / ${fmtNumber(shares)} = <strong>${fmtNumber(perShare)}</strong>.</li>
+        </ol>
+        <p><strong>Interpretación:</strong> el valor estimado se compara con el precio de mercado de ${money(price)}.</p>
+        <p class="source-note">Modelo simplificado: proyecta el FCF base con una tasa uniforme. No sustituye un modelo financiero detallado con estados proyectados independientes.</p>`;
+
+    results.dcf={value:perShare,price,valid:Number.isFinite(perShare)};
+    refreshComparison();
+}
+
+/* =========================================================
+   9. GRAHAM
+========================================================= */
+
+const GRAHAM_IDS=["g-price","g-eps","g-growth","g-bond","g-safety"];
+
+function calculateGraham() {
+    setError("graham-error","");
+    const error=requiredFields(GRAHAM_IDS);
+    if(error) {
+        setError("graham-error",error);
+        return;
+    }
+
+    const price=num("g-price"),eps=num("g-eps"),growth=num("g-growth"),
+          bond=num("g-bond"),safety=num("g-safety");
+
+    if(price<=0 || eps<=0 || growth<0 || bond<=0 || safety<0 || safety>=100) {
+        setError("graham-error","EPS y precio deben ser positivos; el crecimiento y el rendimiento AAA deben ser válidos; el margen de seguridad debe estar entre 0% y menos de 100%.");
+        $("g-classic").textContent="No disponible";
+        $("g-adjusted").textContent="No disponible";
+        results.graham=null;
+        refreshComparison();
+        return;
+    }
+
+    const classic=eps*(8.5+2*growth);
+    const adjusted=classic*(4.4/bond);
+    const safeAdjusted=adjusted*(1-safety/100);
+    const c=companies[selected];
+
+    $("g-classic").textContent=money(classic);
+    $("g-adjusted").textContent=money(adjusted);
+
+    drawBars("graham-chart",["Mercado","Clásico","Ajustado","Con margen"],[
+        price,classic,adjusted,safeAdjusted
+    ],c.currency);
+
+    $("graham-verdict").innerHTML=`
+        <h4>Resultado con margen de seguridad</h4>
+        ${showVerdict(safeAdjusted,price,c.currency)}
+        <p>El valor ajustado con margen de seguridad es ${money(safeAdjusted)}.</p>`;
+
+    $("graham-procedure").innerHTML=`
+        <h4>Procedimiento paso a paso</h4>
+        <ol>
+        <li>EPS = ${fmtNumber(eps)}.</li>
+        <li>g = ${growth}%.</li>
+        <li>Graham clásico = EPS × (8,5 + 2g).</li>
+        <li>Sustitución = ${fmtNumber(eps)} × (8,5 + 2 × ${growth}) = <strong>${money(classic)}</strong>.</li>
+        <li>Factor de ajuste = 4,4 / ${bond} = ${fmtNumber(4.4/bond,4)}.</li>
+        <li>Graham ajustado = ${money(classic)} × ${fmtNumber(4.4/bond,4)} = <strong>${money(adjusted)}</strong>.</li>
+        <li>Margen de seguridad = ${safety}%.</li>
+        <li>Valor con margen = ${money(adjusted)} × (1 − ${safety}/100) = <strong>${money(safeAdjusted)}</strong>.</li>
+        </ol>
+        <p><strong>Interpretación:</strong> el valor clásico es ${money(classic)}, el ajustado es ${money(adjusted)} y el valor aplicando el margen de seguridad es ${money(safeAdjusted)}.</p>
+        <p class="source-note">El ajuste 4,4/Y es una adaptación histórica de la fórmula de Graham. Debe verificarse la definición y el rendimiento del bono AAA utilizado, así como la compatibilidad de monedas y periodos.</p>`;
+
+    results.graham={value:safeAdjusted,classic,adjusted,price,valid:true};
+    refreshComparison();
+}
+
+/* =========================================================
+   10. GORDON
+========================================================= */
+
+const GORDON_IDS=["go-price","go-dividend","go-growth","go-k"];
+
+function calculateGordon() {
+    setError("gordon-error","");
+    const error=requiredFields(GORDON_IDS);
+    if(error) {
+        setError("gordon-error",error);
+        return;
+    }
+
+    const price=num("go-price"),d0=num("go-dividend"),
+          growth=num("go-growth"),k=num("go-k");
+    const c=companies[selected];
+
+    if(price<=0 || d0<0 || growth<0 || k<=growth || k<=0 || growth>=100) {
+        setError("gordon-error","Verifica los datos: precio positivo, dividendo no negativo, crecimiento válido y costo del patrimonio k estrictamente mayor que g.");
+        results.gordon=null;
+        refreshComparison();
+        return;
+    }
+
+    if(!c.paysDividend || d0===0) {
+        setError("gordon-error","Esta empresa no tiene un dividendo positivo registrado en los datos de referencia. El modelo Gordon no resulta aplicable con estos datos.");
+        $("go-d1").textContent="No aplica";
+        $("go-value").textContent="No aplica";
+        $("go-yield").textContent="No aplica";
+        $("gordon-verdict").innerHTML='<span class="status gray">Método no aplicable</span>';
+        $("gordon-procedure").textContent="Se necesita un dividendo anual actual positivo para calcular D1 y el valor intrínseco.";
+        results.gordon=null;
+        refreshComparison();
+        return;
+    }
+
+    const g=growth/100, rate=k/100;
+    const d1=d0*(1+g);
+    const value=d1/(rate-g);
+    const yieldDividend=d0/price*100;
+    const ccy=c.currency;
+
+    $("go-d1").textContent=fmt(d1,ccy);
+    $("go-value").textContent=fmt(value,ccy);
+    $("go-yield").textContent=pct(yieldDividend);
+
+    $("gordon-verdict").innerHTML=showVerdict(value,price,ccy);
+
+    $("gordon-procedure").innerHTML=`
+        <h4>Procedimiento paso a paso</h4>
+        <ol>
+        <li>D0 = ${fmtNumber(d0)}.</li>
+        <li>g = ${growth}% y k = ${k}%.</li>
+        <li>Se verifica k > g: ${k}% > ${growth}%.</li>
+        <li>D1 = D0 × (1 + g).</li>
+        <li>D1 = ${fmtNumber(d0)} × (1 + ${g}) = <strong>${fmtNumber(d1)}</strong>.</li>
+        <li>P0 = D1 / (k − g).</li>
+        <li>P0 = ${fmtNumber(d1)} / (${rate} − ${g}) = <strong>${fmt(value,ccy)}</strong>.</li>
+        <li>Rendimiento por dividendo = D0 / Precio × 100.</li>
+        <li>${fmtNumber(d0)} / ${fmtNumber(price)} × 100 = <strong>${pct(yieldDividend)}</strong>.</li>
+        </ol>
+        <p><strong>Interpretación:</strong> el modelo estima un valor de ${fmt(value,ccy)} por acción, bajo el supuesto de crecimiento constante de dividendos.</p>
+        <p class="source-note">El rendimiento por dividendo utiliza D0, no D1. Se expresa como dividendo anual actual dividido entre precio de mercado.</p>`;
+
+    results.gordon={value,price,d1,yieldDividend,valid:true};
+    refreshComparison();
+}
+
+/* =========================================================
+   11. COMPARADOR
+========================================================= */
+
+function refreshComparison() {
+    if(!$("compare-company")) return;
+    const c=companies[selected];
+    if(!c) return;
+
+    $("compare-company").value=selected;
+    $("compare-info").textContent=`Empresa: ${c.name} (${c.ticker}) · Moneda: ${c.currency} · Precio de referencia: ${fmt(c.price,c.currency)}.`;
+
+    $("c-market").textContent=fmt(c.price,c.currency);
+
+    const available=[
+        ["DCF",results.dcf],
+        ["Graham",results.graham],
+        ["Gordon",results.gordon]
+    ].filter(x=>x[1] && x[1].valid && Number.isFinite(x[1].value));
+
+    $("c-count").textContent=available.length+" de 3";
+
+    const avg=available.length?
+        available.reduce((s,x)=>s+x[1].value,0)/available.length:null;
+
+    $("c-average").textContent=avg===null?"—":fmt(avg,c.currency);
+
+    const all=[...available.map(x=>x[1].value),c.price];
+    drawBars("compare-chart",
+        [...available.map(x=>x[0]),"Mercado"],
+        all,c.currency
+    );
+
+    const tolerance=10;
+    $("compare-table").innerHTML=[
+        ...available.map(([name,obj])=>{
+            const diff=(obj.value-c.price)/c.price*100;
+            const status=diff>tolerance?"Subvaluada":diff< -tolerance?"Sobrevaluada":"Correctamente valorada";
+            return `<tr><td>${name}</td><td>${fmt(obj.value,c.currency)}</td><td>${pct(diff)}</td><td>${status}</td></tr>`;
+        }),
+        `<tr><td>Precio de mercado</td><td>${fmt(c.price,c.currency)}</td><td>0,00%</td><td>Referencia</td></tr>`
+    ].join("");
+
+    if(available.length===0) {
+        $("compare-conclusion").innerHTML="<strong>No hay métodos disponibles.</strong><p>Verifica los datos de entrada en los simuladores.</p>";
+    } else {
+        const best=available.reduce((a,b)=>a[1].value>b[1].value?a:b);
+        const low=available.reduce((a,b)=>a[1].value<b[1].value?a:b);
+        $("compare-conclusion").innerHTML=`
+            <h3>Conclusión comparativa</h3>
+            <p>Se encuentran disponibles ${available.length} método(s) de valoración.</p>
+            <p>La estimación más alta corresponde a <strong>${best[0]}</strong>: ${fmt(best[1].value,c.currency)}.</p>
+            <p>La estimación más baja corresponde a <strong>${low[0]}</strong>: ${fmt(low[1].value,c.currency)}.</p>
+            <p>Precio de mercado de referencia: <strong>${fmt(c.price,c.currency)}</strong>.</p>
+            <p>Los resultados deben analizarse de acuerdo con los supuestos de cada modelo, sin asumir que un promedio constituye automáticamente un valor justo.</p>`;
+    }
+}
+
+/* =========================================================
+   12. LIMPIAR Y RESTABLECER
+========================================================= */
+
+function clearMethod(method) {
+    const ids=method==="dcf"?DCF_IDS:method==="graham"?GRAHAM_IDS:GORDON_IDS;
+    ids.forEach(id=>$(id).value="");
+
+    const errorId=method==="dcf"?"dcf-error":method==="graham"?"graham-error":"gordon-error";
+    setError(errorId,"Todos los campos han sido limpiados. Introduce nuevos valores para calcular.");
+
+    if(method==="dcf") {
+        ["d-ev","d-equity","d-per-share"].forEach(id=>setText(id,"—"));
+        $("dcf-table").innerHTML="";
+        $("dcf-verdict").innerHTML="";
+        $("dcf-procedure").innerHTML="";
+        results.dcf=null;
+    }
+
+    if(method==="graham") {
+        ["g-classic","g-adjusted"].forEach(id=>setText(id,"—"));
+        $("graham-verdict").innerHTML="";
+        $("graham-procedure").innerHTML="";
+        results.graham=null;
+    }
+
+    if(method==="gordon") {
+        ["go-d1","go-value","go-yield"].forEach(id=>setText(id,"—"));
+        $("gordon-verdict").innerHTML="";
+        $("gordon-procedure").innerHTML="";
+        results.gordon=null;
+    }
+    refreshComparison();
+}
+
+function resetMethod(method) {
+    const ticker=method==="dcf"?$("dcf-company").value:
+                 method==="graham"?$("graham-company").value:
+                 $("gordon-company").value;
+    loadCompany(method,ticker||selected);
+    if(method==="dcf") calculateDCF();
+    if(method==="graham") calculateGraham();
+    if(method==="gordon") calculateGordon();
+}
+
+/* =========================================================
+   13. ACTUALIZACIÓN AUTOMÁTICA DE RESULTADOS
+========================================================= */
+
+function enableAutoCalculate() {
+    const methods=[
+        ["dcf",DCF_IDS,calculateDCF],
+        ["graham",GRAHAM_IDS,calculateGraham],
+        ["gordon",GORDON_IDS,calculateGordon]
+    ];
+
+    methods.forEach(([name,ids,fn])=>{
+        ids.forEach(id=>{
+            $(id).addEventListener("change",fn);
+        });
+    });
+}
+
+/* =========================================================
+   14. INICIALIZACIÓN
+========================================================= */
+
+document.addEventListener("DOMContentLoaded",()=>{
+    initSelectors();
+    enableAutoCalculate();
+
+    // Verificación de la fórmula de valor presente solicitada.
+    const example=1000/Math.pow(1.10,2);
+    console.assert(Math.abs(example-826.44628099)<0.000001,
+        "Error en la fórmula de valor presente.");
+});
+</script>
+
+</body>
+</html>
